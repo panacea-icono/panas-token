@@ -37,7 +37,7 @@ redis_pool = None
 async def init_database():
     """Inicializar conexiones de base de datos"""
     global db_pool, redis_pool
-    
+
     try:
         # Configurar PostgreSQL
         if DATABASE_URL:
@@ -52,7 +52,7 @@ async def init_database():
             logger.info("✅ PostgreSQL pool inicializado")
         else:
             logger.warning("⚠️ DATABASE_URL no configurada, usando SQLite local")
-            
+
         # Configurar Redis
         if REDIS_URL:
             redis_pool = aioredis.ConnectionPool.from_url(
@@ -63,7 +63,7 @@ async def init_database():
             logger.info("✅ Redis pool inicializado")
         else:
             logger.warning("⚠️ REDIS_URL no configurada")
-            
+
     except Exception as e:
         logger.error(f"❌ Error inicializando base de datos: {e}")
         raise
@@ -167,16 +167,16 @@ async def startup_event():
 async def shutdown_event():
     """Cerrar conexiones al apagar la aplicación"""
     global db_pool, redis_pool
-    
+
     try:
         if db_pool:
             await db_pool.close()
             logger.info("🔒 PostgreSQL pool cerrado")
-            
+
         if redis_pool:
             await redis_pool.disconnect()
             logger.info("🔒 Redis pool cerrado")
-            
+
         logger.info("👋 Aplicación cerrada correctamente")
     except Exception as e:
         logger.error(f"❌ Error en shutdown: {e}")
@@ -404,16 +404,16 @@ async def get_database_metrics(db=Depends(get_db)):
                     "medical_records_processed": 42
                 }
             }
-        
+
         # Consultar métricas reales de la base de datos
         query = """
-        SELECT metric_name, metric_value, metric_data, updated_at 
-        FROM system_metrics 
+        SELECT metric_name, metric_value, metric_data, updated_at
+        FROM system_metrics
         ORDER BY metric_name
         """
-        
+
         rows = await db.fetch(query)
-        
+
         metrics = {}
         for row in rows:
             metrics[row['metric_name']] = {
@@ -421,14 +421,14 @@ async def get_database_metrics(db=Depends(get_db)):
                 "data": row['metric_data'],
                 "last_updated": row['updated_at'].isoformat() if row['updated_at'] else None
             }
-        
+
         return {
             "status": "success",
             "database": "postgresql",
             "metrics": metrics,
             "retrieved_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error obteniendo métricas de DB: {e}")
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
@@ -450,7 +450,7 @@ async def update_metric(
                 "metric_name": metric_name,
                 "metric_value": metric_value
             }
-        
+
         # Actualizar o insertar métrica
         query = """
         INSERT INTO system_metrics (metric_name, metric_value, metric_data, updated_at)
@@ -461,15 +461,15 @@ async def update_metric(
             updated_at = EXCLUDED.updated_at
         RETURNING id, metric_name, metric_value
         """
-        
+
         result = await db.fetchrow(
-            query, 
-            metric_name, 
-            metric_value, 
-            metric_data or {}, 
+            query,
+            metric_name,
+            metric_value,
+            metric_data or {},
             datetime.now()
         )
-        
+
         return {
             "status": "success",
             "action": "metric_updated",
@@ -480,7 +480,7 @@ async def update_metric(
             },
             "updated_at": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         logger.error(f"Error actualizando métrica: {e}")
         raise HTTPException(status_code=500, detail=f"Error actualizando métrica: {str(e)}")
@@ -494,7 +494,7 @@ async def get_database_status(db=Depends(get_db), redis=Depends(get_redis)):
         "postgresql": {"status": "disconnected", "details": None},
         "redis": {"status": "disconnected", "details": None}
     }
-    
+
     # Verificar PostgreSQL
     try:
         if db is not None:
@@ -512,7 +512,7 @@ async def get_database_status(db=Depends(get_db), redis=Depends(get_redis)):
             "status": "error",
             "details": str(e)[:100]
         }
-    
+
     # Verificar Redis
     try:
         if redis is not None:
@@ -531,14 +531,14 @@ async def get_database_status(db=Depends(get_db), redis=Depends(get_redis)):
             "status": "error",
             "details": str(e)[:100]
         }
-    
+
     # Determinar estado general
     overall_status = "healthy"
     if status["postgresql"]["status"] == "error" or status["redis"]["status"] == "error":
         overall_status = "degraded"
     elif status["postgresql"]["status"] == "disconnected" and status["redis"]["status"] == "disconnected":
         overall_status = "development"
-    
+
     return {
         "overall_status": overall_status,
         "databases": status

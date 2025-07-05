@@ -37,17 +37,17 @@ echo "✅ App $APP_NAME encontrada"
 setup_postgresql() {
     echo ""
     echo "🐘 Configurando PostgreSQL..."
-    
+
     # Verificar si PostgreSQL ya existe
     if heroku addons --app $APP_NAME | grep -q "heroku-postgresql"; then
         echo "✅ PostgreSQL ya está configurado"
-        
+
         # Obtener información de la base de datos
         echo "📊 Información de PostgreSQL:"
         heroku pg:info --app $APP_NAME
     else
         echo "📦 Instalando PostgreSQL..."
-        
+
         # Instalar PostgreSQL (plan básico gratuito)
         if heroku addons:create heroku-postgresql:essential-0 --app $APP_NAME; then
             echo "✅ PostgreSQL instalado exitosamente"
@@ -57,11 +57,11 @@ setup_postgresql() {
             echo "⚠️ Intentando con plan hobby-dev..."
             heroku addons:create heroku-postgresql:hobby-dev --app $APP_NAME
         fi
-        
+
         echo "⏳ Esperando que PostgreSQL esté listo..."
         heroku pg:wait --app $APP_NAME
     fi
-    
+
     # Obtener DATABASE_URL
     DATABASE_URL=$(heroku config:get DATABASE_URL --app $APP_NAME)
     if [ -n "$DATABASE_URL" ]; then
@@ -77,17 +77,17 @@ setup_postgresql() {
 setup_redis() {
     echo ""
     echo "🔴 Configurando Redis..."
-    
+
     # Verificar si Redis ya existe
     if heroku addons --app $APP_NAME | grep -q "heroku-redis"; then
         echo "✅ Redis ya está configurado"
-        
+
         # Obtener información de Redis
         echo "📊 Información de Redis:"
         heroku redis:info --app $APP_NAME
     else
         echo "📦 Instalando Redis..."
-        
+
         # Instalar Redis (plan básico gratuito)
         if heroku addons:create heroku-redis:mini --app $APP_NAME; then
             echo "✅ Redis instalado exitosamente"
@@ -96,7 +96,7 @@ setup_redis() {
             heroku addons:create heroku-redis:hobby-dev --app $APP_NAME
         fi
     fi
-    
+
     # Obtener REDIS_URL
     REDIS_URL=$(heroku config:get REDIS_URL --app $APP_NAME)
     if [ -n "$REDIS_URL" ]; then
@@ -112,7 +112,7 @@ setup_redis() {
 setup_database_env_vars() {
     echo ""
     echo "⚙️ Configurando variables de entorno de base de datos..."
-    
+
     heroku config:set \
         DATABASE_CONNECTION_POOL_SIZE=20 \
         DATABASE_CONNECTION_TIMEOUT=30 \
@@ -120,7 +120,7 @@ setup_database_env_vars() {
         REDIS_CONNECTION_POOL_SIZE=10 \
         REDIS_CONNECTION_TIMEOUT=10 \
         --app $APP_NAME
-    
+
     echo "✅ Variables de entorno configuradas"
 }
 
@@ -128,7 +128,7 @@ setup_database_env_vars() {
 setup_initial_tables() {
     echo ""
     echo "🏗️ Configurando estructura inicial de base de datos..."
-    
+
     # Crear archivo SQL temporal con las tablas iniciales
     cat > /tmp/init_db.sql << 'EOF'
 -- Tabla para métricas del sistema
@@ -197,8 +197,8 @@ CREATE INDEX IF NOT EXISTS idx_medical_data_participant ON medical_data(particip
 CREATE INDEX IF NOT EXISTS idx_panas_tokens_wallet ON panas_tokens(wallet_address);
 
 -- Insertar datos iniciales de métricas
-INSERT INTO system_metrics (metric_name, metric_value, metric_data) 
-VALUES 
+INSERT INTO system_metrics (metric_name, metric_value, metric_data)
+VALUES
     ('total_api_calls', 0, '{"description": "Total API calls made"}'),
     ('active_users', 0, '{"description": "Current active users"}'),
     ('ai_analyses_count', 0, '{"description": "Total AI analyses performed"}'),
@@ -215,7 +215,7 @@ EOF
         echo "❌ Error al crear estructura de base de datos"
         return 1
     fi
-    
+
     # Limpiar archivo temporal
     rm -f /tmp/init_db.sql
 }
@@ -224,12 +224,12 @@ EOF
 verify_database_setup() {
     echo ""
     echo "🔍 Verificando configuración de base de datos..."
-    
+
     # Verificar conexión a PostgreSQL
     echo "📊 Verificando PostgreSQL..."
     if heroku pg:psql --app $APP_NAME -c "\dt" > /dev/null 2>&1; then
         echo "✅ Conexión a PostgreSQL exitosa"
-        
+
         # Mostrar tablas creadas
         echo "📋 Tablas en la base de datos:"
         heroku pg:psql --app $APP_NAME -c "\dt"
@@ -237,12 +237,12 @@ verify_database_setup() {
         echo "❌ Error de conexión a PostgreSQL"
         return 1
     fi
-    
+
     # Verificar Redis si está configurado
     if heroku config:get REDIS_URL --app $APP_NAME > /dev/null 2>&1; then
         echo "✅ Redis configurado correctamente"
     fi
-    
+
     # Mostrar todas las configuraciones
     echo ""
     echo "📋 Variables de entorno relacionadas con base de datos:"
@@ -276,7 +276,7 @@ show_database_info() {
 # Ejecutar configuración
 main() {
     echo "🚀 Iniciando configuración de base de datos..."
-    
+
     # Configurar PostgreSQL
     if setup_postgresql; then
         echo "✅ PostgreSQL configurado"
@@ -284,17 +284,17 @@ main() {
         echo "❌ Error configurando PostgreSQL"
         exit 1
     fi
-    
+
     # Configurar Redis
     if setup_redis; then
         echo "✅ Redis configurado"
     else
         echo "⚠️ Redis no configurado (no crítico)"
     fi
-    
+
     # Configurar variables de entorno
     setup_database_env_vars
-    
+
     # Crear estructura inicial
     if setup_initial_tables; then
         echo "✅ Estructura de DB creada"
@@ -302,7 +302,7 @@ main() {
         echo "❌ Error creando estructura de DB"
         exit 1
     fi
-    
+
     # Verificar configuración
     if verify_database_setup; then
         echo "✅ Verificación exitosa"
@@ -310,10 +310,10 @@ main() {
         echo "❌ Error en verificación"
         exit 1
     fi
-    
+
     # Mostrar información útil
     show_database_info
-    
+
     echo ""
     echo "🎉 ¡Configuración de base de datos completada exitosamente!"
     echo ""

@@ -2,7 +2,6 @@ name: Pull Request validation
 
 on: [pull_request]
 
-
 jobs:
   panas_token-contracts-ci:
     name: Run panas_token-contracts validation
@@ -12,3 +11,25 @@ jobs:
     name: Run panas_token-frontend validation
     uses: ./.github/workflows/panas_token-frontend-ci.yaml
 
+  metrics-logs:
+    name: Run metrics and logs collection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Collect system metrics
+        run: |
+          echo "system_metrics     -- Métricas en tiempo real"
+      - name: Collect API logs
+        run: |
+          echo "api_logs          -- Logs de API calls"
+      - name: Collect AI analyses
+        run: |
+          echo "ai_analyses       -- Historial AI/ML"
+      - name: Collect medical data
+        run: |
+          echo "medical_data      -- Datos médicos Panacea"
+      - name: Collect panas tokens data
+        run: |
+          echo "panas_tokens      -- Transacciones tokens"
+      - name: Collect user profiles
+        run: |
+          echo "users             -- Perfiles usuarios"

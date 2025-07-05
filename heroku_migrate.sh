@@ -108,8 +108,8 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_wallet ON users(wallet_address);
 
 -- Insertar métricas iniciales
-INSERT INTO system_metrics (metric_name, metric_value, metric_data) 
-VALUES 
+INSERT INTO system_metrics (metric_name, metric_value, metric_data)
+VALUES
     ('total_api_calls', 0, '{"description": "Total API calls made"}'),
     ('active_users', 0, '{"description": "Current active users"}'),
     ('ai_analyses_count', 0, '{"description": "Total AI analyses performed"}'),
@@ -129,18 +129,18 @@ $$ language 'plpgsql';
 
 -- Crear triggers para updated_at
 DROP TRIGGER IF EXISTS update_medical_data_updated_at ON medical_data;
-CREATE TRIGGER update_medical_data_updated_at 
-    BEFORE UPDATE ON medical_data 
+CREATE TRIGGER update_medical_data_updated_at
+    BEFORE UPDATE ON medical_data
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS update_system_metrics_updated_at ON system_metrics;
-CREATE TRIGGER update_system_metrics_updated_at 
-    BEFORE UPDATE ON system_metrics 
+CREATE TRIGGER update_system_metrics_updated_at
+    BEFORE UPDATE ON system_metrics
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 EOF
 
