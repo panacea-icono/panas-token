@@ -1,6 +1,7 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # PANAS Token API Principal
   panas-api:
     build: .
     ports:
@@ -12,14 +13,119 @@ services:
       - ALGORAND_NETWORK=testnet
       - PANAS_TOTAL_SUPPLY=1000000
       - PANAS_DECIMALS=6
+      - OLLAMA_API_URL=http://ollama:11434
+      - CODEQWEN_API_URL=http://codeqwen-api:5000
+      - TELEGRAM_BOT_TOKEN_1=8187502572:AAFn2bEOOqDipeDWTnszjyWyiBUUBsofMis
+      - TELEGRAM_BOT_TOKEN_2=7155901429:AAFTyNZ2VQlufM8gR-TQCiMPD1rsE1qqOAE
+      - TELEGRAM_BOT_TOKEN_3=7622504424:AAGQjIbXs3fs9ITUiDFBuzNG5PmJHb4Sxao
     env_file:
       - .env
+      - .env.compose
     volumes:
       - .:/app
+      - ./logs:/app/logs
     restart: unless-stopped
     depends_on:
       - redis
       - postgres
+      - ollama
+      - codeqwen-api
+    networks:
+      - panas-network
+
+  # Ollama - Modelos locales de IA
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama_data:/root/.ollama
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - panas-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # CodeQwen API - Modelo especializado en código
+  codeqwen-api:
+    build:
+      context: ./ai-models/codeqwen
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - MODEL_NAME=codeqwen2.5-7b-instruct
+      - MAX_TOKENS=4096
+      - TEMPERATURE=0.1
+    volumes:
+      - codeqwen_models:/app/models
+      - ./ai-models/codeqwen/cache:/app/cache
+    restart: unless-stopped
+    networks:
+      - panas-network
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Telegram Bot Manager
+  telegram-bots:
+    build:
+      context: ./telegram-bots
+      dockerfile: Dockerfile
+    environment:
+      - PANAS_API_URL=http://panas-api:8000
+      - OLLAMA_API_URL=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+      - BOT_TOKEN_1=8187502572:AAFn2bEOOqDipeDWTnszjyWyiBUUBsofMis
+      - BOT_TOKEN_2=7155901429:AAFTyNZ2VQlufM8gR-TQCiMPD1rsE1qqOAE
+      - BOT_TOKEN_3=7622504424:AAGQjIbXs3fs9ITUiDFBuzNG5PmJHb4Sxao
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MEDICAL_GPT_API_URL=http://medical-gpt-api:5003
+    volumes:
+      - ./telegram-bots:/app
+      - ./logs/telegram:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - panas-api
+      - redis
+      - ollama
+      - medical-gpt-api
+    networks:
+      - panas-network
+
+  # Medical GPT API - Integración con asistentes médicos ChatGPT
+  medical-gpt-api:
+    build:
+      context: ./ai-models/chatgpt-medical
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - HOST=0.0.0.0
+      - PORT=5003
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./ai-models/chatgpt-medical:/app
+      - ./logs/medical:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - redis
     networks:
       - panas-network
 
@@ -46,22 +152,86 @@ services:
     networks:
       - panas-network
 
-  nginx:
-    image: nginx:alpine
+  # Text-to-Speech y Speech-to-Text
+  whisper-api:
+    build:
+      context: ./ai-models/whisper-api
+      dockerfile: Dockerfile
     ports:
-      - "80:80"
-      - "443:443"
+      - "5002:5000"
+    environment:
+      - MODEL_SIZE=medium
+      - DEVICE=cuda
+      - HOST=0.0.0.0
+      - PORT=5000
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - panas-api
+      - whisper_models:/app/models
+      - ./audio-processing:/app/audio
+    restart: unless-stopped
+    networks:
+      - panas-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Vector Database para embeddings
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - panas-network
+
+  # MinIO para almacenamiento de archivos
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=panasadmin
+      - MINIO_ROOT_PASSWORD=panas123456
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - panas-network
+
+  # Jupyter Lab para desarrollo de IA
+  jupyter-ai:
+    image: jupyter/tensorflow-notebook:latest
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=panas-ai-token
+    volumes:
+      - ./ai-notebooks:/home/jovyan/work
+      - jupyter_data:/home/jovyan
+    restart: unless-stopped
     networks:
       - panas-network
 
 volumes:
   redis_data:
   postgres_data:
+  ollama_data:
+  codeqwen_models:
+  whisper_models:
+  qdrant_data:
+  minio_data:
+  jupyter_data:
 
 networks:
   panas-network:
