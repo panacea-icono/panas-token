@@ -1,0 +1,55 @@
+name: CI - panas_token-frontend
+
+on:
+  workflow_call:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install AlgoKit
+        run: pipx install algokit
+
+      - name: Bootstrap dependencies
+        run: algokit project bootstrap all --project-name 'panas_token'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: projects/panas_token-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd projects/panas_token-frontend
+          npm ci
+
+      - name: Lint frontend code
+        run: |
+          cd projects/panas_token-frontend
+          npm run lint
+
+      - name: Check frontend types
+        run: |
+          cd projects/panas_token-frontend
+          npm run type-check
+
+      - name: Build frontend
+        run: |
+          cd projects/panas_token-frontend
+          npm run build
+
+      - name: Run frontend tests
+        run: |
+          cd projects/panas_token-frontend
+          npm run test:unit
+
+      - name: Run E2E tests
+        run: |
+          cd projects/panas_token-frontend
+          npm run test:e2e

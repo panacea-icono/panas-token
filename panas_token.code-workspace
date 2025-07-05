@@ -16,12 +16,18 @@
       "projects/": true
     },
     "jest.disabledWorkspaceFolders": ["ROOT", "projects"],
-    "dotenv.enableAutocloaking": false
+    "dotenv.enableAutocloaking": false,
+    "cSpell.words": [
+      "Completadas",
+      "huggingface",
+      "pycparser",
+      "Resumen"
+    ]
   },
   "extensions": {
     "recommendations": ["joshx.workspace-terminals"]
   },
-  
+
   "tasks": {
     "version": "2.0.0",
     "tasks": [

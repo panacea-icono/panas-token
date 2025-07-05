@@ -5,6 +5,21 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+    <!-- For Microsoft browsers -->
+    <meta name="msapplication-TileColor" content="#000000" />
+    <!-- For iOS Safari -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Firefox and Opera support -->
+    <!-- 'theme-color' is not supported by Firefox, Firefox for Android, and Opera -->
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <style>
+      body {
+        background-color: #000000;
+      }
+    </style>
     <meta
       name="description"
       content="Web site created using create-react-app"

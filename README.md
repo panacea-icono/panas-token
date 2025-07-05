@@ -2,9 +2,41 @@
 
 This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
 
+## 🆕 Nuevas Dependencias Instaladas
+
+### OpenAI Integration
+Este proyecto ahora incluye integración con OpenAI para funcionalidades de IA:
+
+**Backend (Python/Poetry):**
+
+- `openai ^1.93.0` - Cliente oficial de OpenAI para Python
+- `python-dotenv ^1.1.1` - Manejo de variables de entorno
+- Herramientas de desarrollo: `black`, `ruff`, `mypy`, `pytest`
+
+**Frontend (React/npm):**
+
+- `openai ^5.8.2` - Cliente oficial de OpenAI para JavaScript/TypeScript
+
+### Configuración de OpenAI
+
+1. Copia el archivo `.env.example` a `.env`
+2. Agrega tu clave API de OpenAI:
+   ```bash
+   cp .env.example .env
+   # Edita .env y agrega tu OPENAI_API_KEY
+   ```
+
+### Uso de OpenAI
+Consulta el archivo `openai_integration.py` para ejemplos de:
+
+- Generación de descripciones de smart contracts
+- Análisis de código de contratos
+- Integración con AlgoKit
+
 ## Setup
 
 ### Initial setup
+
 1. Clone this repository to your local machine.
 2. Ensure [Docker](https://www.docker.com/) is installed and operational. Then, install `AlgoKit` following this [guide](https://github.com/algorandfoundation/algokit-cli#install).
 3. Run `algokit project bootstrap all` in the project directory. This command sets up your environment by installing necessary dependencies, setting up a Python virtual environment, and preparing your `.env` file.
@@ -26,6 +58,7 @@ This starter full stack project has been generated using AlgoKit. See below for 
 This project uses [GitHub Actions](https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions) to define CI/CD workflows, which are located in the [`.github/workflows`](./.github/workflows) folder. You can configure these actions to suit your project's needs, including CI checks, audits, linting, type checking, testing, and deployments to TestNet.
 
 For pushes to `main` branch, after the above checks pass, the following deployment actions are performed:
+
   - The smart contract(s) are deployed to TestNet using [AlgoNode](https://algonode.io).
   - The frontend application is deployed to a provider of your choice (Netlify, Vercel, etc.). See [frontend README](frontend/README.md) for more information.
 

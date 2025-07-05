@@ -1,0 +1,85 @@
+# Archivos y directorios a ignorar en Docker build
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+build
+develop-eggs
+dist
+downloads
+eggs
+.eggs
+lib
+lib64
+parts
+sdist
+var
+wheels
+*.egg-info
+.installed.cfg
+*.egg
+
+# Entornos virtuales
+.env
+.venv
+env
+venv
+ENV
+env.bak
+venv.bak
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs
+
+# Archivos temporales
+tmp
+.tmp
+*.tmp
+
+# Documentación
+*.md
+docs
+
+# Tests
+tests
+.pytest_cache
+.coverage
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Scripts de deployment
+deploy_*.sh
+
+# Archivos locales de desarrollo
+.env.local
+.env.development
+.env.test
+
+# Node modules (si los hay)
+node_modules
+
+# Cache
+.cache
+.parcel-cache

@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "panas-token"
+version = "0.1.0"
+description = "AlgoKit project with OpenAI integration"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+algokit-utils = "^3.0.0"
+algosdk = "^2.0.0"
+openai = "^1.0.0"
+python-dotenv = "^1.0.0"
+pydantic = "^2.0.0"
+huggingface-hub = "^0.33.2"
+flask = "^3.1.1"
+fastapi = "^0.115.14"
+uvicorn = "^0.35.0"
+httpx = "^0.23.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+black = "^23.0.0"
+ruff = "^0.1.0"
+mypy = "^1.0.0"
+pip-audit = "^2.6.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true

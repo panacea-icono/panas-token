@@ -1,0 +1,95 @@
+name: CD - panas_token-frontend
+
+on:
+  workflow_call:
+    secrets:
+      VERCEL_TOKEN:
+        required: false
+      VERCEL_ORG_ID:
+        required: false
+      VERCEL_PROJECT_ID:
+        required: false
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: Staging
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install AlgoKit
+        run: pipx install algokit
+
+      - name: Bootstrap dependencies
+        run: algokit project bootstrap all --project-name 'panas_token'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: projects/panas_token-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd projects/panas_token-frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd projects/panas_token-frontend
+          npm run build
+
+      - name: Deploy to Vercel (Staging)
+        run: |
+          cd projects/panas_token-frontend
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "Deploying to Vercel staging..."
+            npx vercel --token ${{ secrets.VERCEL_TOKEN }} --org ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID }} --confirm
+          else
+            echo "Vercel deployment skipped - no token configured"
+          fi
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: Production
+    needs: deploy-staging
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install AlgoKit
+        run: pipx install algokit
+
+      - name: Bootstrap dependencies
+        run: algokit project bootstrap all --project-name 'panas_token'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: projects/panas_token-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd projects/panas_token-frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd projects/panas_token-frontend
+          npm run build
+
+      - name: Deploy to Vercel (Production)
+        run: |
+          cd projects/panas_token-frontend
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "Deploying to Vercel production..."
+            npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --org ${{ secrets.VERCEL_ORG_ID }} --project ${{ secrets.VERCEL_PROJECT_ID }} --confirm
+          else
+            echo "Vercel deployment skipped - no token configured"
+          fi
