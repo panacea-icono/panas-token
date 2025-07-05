@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.vscode/**'
+      - '.idea/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  panas_token-contracts-validate:
+    name: Run panas_token-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/panas_token-contracts-ci.yaml
+
+  panas_token-contracts-release:
+    name: Run panas_token-contracts release
+    secrets: inherit
+    uses: ./.github/workflows/panas_token-contracts-cd.yaml
+    needs: panas_token-contracts-validate
+
+  panas_token-frontend-validate:
+    name: Run panas_token-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/panas_token-frontend-ci.yaml
+
+  panas_token-frontend-release:
+    name: Run panas_token-frontend release
+    secrets: inherit
+    uses: ./.github/workflows/panas_token-frontend-cd.yaml
+    needs: panas_token-frontend-validate

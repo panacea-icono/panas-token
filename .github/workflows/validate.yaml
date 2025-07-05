@@ -1,0 +1,14 @@
+name: Pull Request validation
+
+on: [pull_request]
+
+
+jobs:
+  panas_token-contracts-ci:
+    name: Run panas_token-contracts validation
+    uses: ./.github/workflows/panas_token-contracts-ci.yaml
+
+  panas_token-frontend-ci:
+    name: Run panas_token-frontend validation
+    uses: ./.github/workflows/panas_token-frontend-ci.yaml
+
