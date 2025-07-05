@@ -16,7 +16,7 @@ async def create_tables():
     if not database_url:
         print("❌ DATABASE_URL no está configurada")
         return False
-    
+
     # Corregir el esquema de URL para asyncpg
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)

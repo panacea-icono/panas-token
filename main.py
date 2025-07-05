@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 import asyncpg
-import aioredis
+import redis.asyncio as redis
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -55,7 +55,7 @@ async def init_database():
 
         # Configurar Redis
         if REDIS_URL:
-            redis_pool = aioredis.ConnectionPool.from_url(
+            redis_pool = redis.ConnectionPool.from_url(
                 REDIS_URL,
                 max_connections=10,
                 retry_on_timeout=True
@@ -82,7 +82,7 @@ async def get_db():
 async def get_redis():
     """Dependency para obtener conexión a Redis"""
     if redis_pool:
-        redis = aioredis.Redis(connection_pool=redis_pool)
+        redis_client = redis.Redis(connection_pool=redis_pool)
         try:
             yield redis
         finally:
