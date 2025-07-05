@@ -84,9 +84,9 @@ async def get_redis():
     if redis_pool:
         redis_client = redis.Redis(connection_pool=redis_pool)
         try:
-            yield redis
+            yield redis_client
         finally:
-            await redis.close()
+            await redis_client.close()
     else:
         yield None
 
