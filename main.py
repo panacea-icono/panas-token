@@ -6,15 +6,15 @@ y se integra con el pipeline de Panacea API Central.
 """
 
 import os
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
-import asyncio
-from datetime import datetime
 
-from panacea_integration import PanaceaIntegrationService
 from openai_integration import AIService
+from panacea_integration import PanaceaIntegrationService
 
 # Configuración de la aplicación
 app = FastAPI(
@@ -22,7 +22,7 @@ app = FastAPI(
     description="API para el token PANAS con integración médica Panacea",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Configurar CORS
@@ -39,6 +39,8 @@ panacea_service = PanaceaIntegrationService()
 ai_service = AIService()
 
 # Modelos Pydantic
+
+
 class TokenMetrics(BaseModel):
     transaction_count: int
     active_users: int
@@ -46,6 +48,7 @@ class TokenMetrics(BaseModel):
     total_rewards_distributed: int
     research_categories: List[str]
     geographic_distribution: Dict[str, int]
+
 
 class ParticipantData(BaseModel):
     age: int
@@ -55,13 +58,16 @@ class ParticipantData(BaseModel):
     research_type: str
     consent_level: str
 
+
 class MedicalPrompt(BaseModel):
     prompt: str
     context: Optional[str] = "medical_research"
 
+
 class ContractAnalysis(BaseModel):
     contract_name: str
     functionality: str
+
 
 class TokenTransfer(BaseModel):
     from_address: str
@@ -69,7 +75,10 @@ class TokenTransfer(BaseModel):
     amount: int
     memo: Optional[str] = None
 
+
 # Endpoints de salud y estado
+
+
 @app.get("/")
 async def root():
     """Endpoint raíz con información básica."""
@@ -78,8 +87,9 @@ async def root():
         "version": "1.0.0",
         "status": "running",
         "timestamp": datetime.now().isoformat(),
-        "integrations": ["panacea", "openai", "algorand"]
+        "integrations": ["panacea", "openai", "algorand"],
     }
+
 
 @app.get("/health")
 async def health_check():
@@ -94,18 +104,17 @@ async def health_check():
             "services": {
                 "panacea_integration": panacea_status.get("integration_ready", False),
                 "ai_service": True,  # Siempre disponible localmente
-                "algorand_network": os.getenv("ALGORAND_NETWORK", "testnet")
+                "algorand_network": os.getenv("ALGORAND_NETWORK", "testnet"),
             },
-            "token_config": panacea_status.get("token_config", {})
+            "token_config": panacea_status.get("token_config", {}),
         }
     except Exception as e:
-        return {
-            "status": "partial",
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }
+        return {"status": "partial", "error": str(e), "timestamp": datetime.now().isoformat()}
+
 
 # Endpoints de integración con Panacea
+
+
 @app.post("/panacea/analyze-medical")
 async def analyze_medical_data(data: MedicalPrompt):
     """Analizar datos médicos usando la IA de Panacea."""
@@ -115,10 +124,11 @@ async def analyze_medical_data(data: MedicalPrompt):
             "status": "success",
             "analysis": result,
             "context": data.context,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en análisis médico: {str(e)}")
+
 
 @app.post("/panacea/evaluate-risk")
 async def evaluate_participant_risk(participant: ParticipantData):
@@ -129,10 +139,11 @@ async def evaluate_participant_risk(participant: ParticipantData):
             "status": "success",
             "risk_evaluation": result,
             "participant_id": f"participant_{datetime.now().timestamp()}",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en evaluación de riesgo: {str(e)}")
+
 
 @app.post("/panacea/submit-metrics")
 async def submit_token_metrics(metrics: TokenMetrics):
@@ -146,28 +157,31 @@ async def submit_token_metrics(metrics: TokenMetrics):
             "status": "success",
             "submission_result": result,
             "metrics_submitted": metrics_data,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error enviando métricas: {str(e)}")
 
+
 # Endpoints de IA local
+
+
 @app.post("/ai/analyze-contract")
 async def analyze_smart_contract(analysis_data: ContractAnalysis):
     """Analizar smart contract usando IA local."""
     try:
         description = await ai_service.generate_smart_contract_description(
-            analysis_data.contract_name,
-            analysis_data.functionality
+            analysis_data.contract_name, analysis_data.functionality
         )
         return {
             "status": "success",
             "contract_analysis": description,
             "contract_name": analysis_data.contract_name,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en análisis de contrato: {str(e)}")
+
 
 @app.post("/ai/generate-prompt")
 async def generate_ai_response(prompt_data: MedicalPrompt):
@@ -175,8 +189,11 @@ async def generate_ai_response(prompt_data: MedicalPrompt):
     try:
         # Usar el servicio de IA local para generar respuesta
         messages = [
-            {"role": "system", "content": "Eres un asistente especializado en tokens médicos y blockchain."},
-            {"role": "user", "content": prompt_data.prompt}
+            {
+                "role": "system",
+                "content": "Eres un asistente especializado en tokens médicos y blockchain.",
+            },
+            {"role": "user", "content": prompt_data.prompt},
         ]
 
         if ai_service.ai_provider == "ollama" and ai_service.ollama_enabled:
@@ -189,12 +206,15 @@ async def generate_ai_response(prompt_data: MedicalPrompt):
             "response": response,
             "provider": ai_service.ai_provider,
             "model": ai_service.model,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generando respuesta IA: {str(e)}")
 
+
 # Endpoints del token PANAS
+
+
 @app.get("/token/info")
 async def get_token_info():
     """Obtener información del token PANAS."""
@@ -210,9 +230,10 @@ async def get_token_info():
             "Incentivos para participantes en investigación",
             "Integración con IA médica",
             "Análisis de riesgos automatizado",
-            "Métricas de investigación"
-        ]
+            "Métricas de investigación",
+        ],
     }
+
 
 @app.post("/token/simulate-transfer")
 async def simulate_token_transfer(transfer: TokenTransfer):
@@ -227,10 +248,13 @@ async def simulate_token_transfer(transfer: TokenTransfer):
         "memo": transfer.memo,
         "timestamp": datetime.now().isoformat(),
         "network": os.getenv("ALGORAND_NETWORK", "testnet"),
-        "note": "Esta es una simulación. En producción se ejecutaría en Algorand."
+        "note": "Esta es una simulación. En producción se ejecutaría en Algorand.",
     }
 
+
 # Endpoints de métricas y estadísticas
+
+
 @app.get("/metrics/summary")
 async def get_metrics_summary():
     """Obtener resumen de métricas del sistema."""
@@ -239,23 +263,26 @@ async def get_metrics_summary():
             "uptime": "running",
             "integrations_active": 2,
             "last_panacea_sync": datetime.now().isoformat(),
-            "ai_provider": getattr(ai_service, 'ai_provider', 'openai'),
-            "network": os.getenv("ALGORAND_NETWORK", "testnet")
+            "ai_provider": getattr(ai_service, "ai_provider", "openai"),
+            "network": os.getenv("ALGORAND_NETWORK", "testnet"),
         },
         "token_metrics": {
             "simulated_transactions": 1250,
             "active_researchers": 89,
             "research_projects": 5,
-            "total_rewards": 50000
+            "total_rewards": 50000,
         },
         "integration_status": {
             "panacea_api": "connected",
             "openai_service": "active",
-            "algorand_network": "testnet"
-        }
+            "algorand_network": "testnet",
+        },
     }
 
+
 # Tareas en segundo plano
+
+
 async def sync_with_panacea():
     """Sincronizar datos con Panacea en segundo plano."""
     try:
@@ -266,13 +293,14 @@ async def sync_with_panacea():
             "active_users": 89,
             "research_projects": 5,
             "total_rewards_distributed": 50000,
-            "research_categories": ["oncology", "rare_diseases", "neurology"]
+            "research_categories": ["oncology", "rare_diseases", "neurology"],
         }
 
         await panacea_service.submit_panas_metrics(current_metrics)
         print(f"✅ Sync con Panacea completado: {datetime.now()}")
     except Exception as e:
         print(f"❌ Error en sync con Panacea: {e}")
+
 
 @app.post("/admin/sync-panacea")
 async def trigger_panacea_sync(background_tasks: BackgroundTasks):
@@ -281,8 +309,9 @@ async def trigger_panacea_sync(background_tasks: BackgroundTasks):
     return {
         "status": "sync_initiated",
         "message": "Sincronización con Panacea iniciada en segundo plano",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 if __name__ == "__main__":
     import uvicorn
@@ -295,8 +324,5 @@ if __name__ == "__main__":
     print(f"📖 Documentación disponible en: http://{host}:{port}/docs")
 
     uvicorn.run(
-        "main:app",
-        host=host,
-        port=port,
-        reload=os.getenv("DEBUG", "false").lower() == "true"
+        "main:app", host=host, port=port, reload=os.getenv("DEBUG", "false").lower() == "true"
     )

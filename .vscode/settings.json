@@ -1,5 +1,59 @@
 {
-  // Disabled due to matangover.mypy extension not supporting monorepos
-  // To be addressed as part of https://github.com/matangover/mypy-vscode/issues/82
-  "mypy.enabled": false
+    // Disabled due to matangover.mypy extension not supporting monorepos
+    // To be addressed as part of https://github.com/matangover/mypy-vscode/issues/82
+    "mypy.enabled": false,
+    
+    // Python configuration
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--max-line-length=100",
+        "--ignore=E501,W503"
+    ],
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=100"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    
+    // Editor configuration
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    
+    // File associations
+    "files.associations": {
+        "*.yaml": "yaml",
+        "*.yml": "yaml",
+        "Dockerfile": "dockerfile",
+        ".dockerignore": "ignore",
+        ".gitignore": "ignore"
+    },
+    
+    // YAML configuration
+    "yaml.validate": true,
+    "yaml.format.enable": true,
+    "yaml.completion": true,
+    
+    // File exclusions
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/venv": true,
+        "**/.env": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/bower_components": true,
+        "**/*.code-search": true,
+        "**/__pycache__": true,
+        "**/venv": true
+    }
 }

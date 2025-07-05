@@ -8,8 +8,10 @@ el token PANAS con el pipeline de APIs médicas.
 import asyncio
 import json
 from datetime import datetime
-from panacea_integration import PanaceaIntegrationService
+
 from dotenv import load_dotenv
+
+from panacea_integration import PanaceaIntegrationService
 
 load_dotenv()
 
@@ -46,7 +48,7 @@ async def main():
             "medical_history": ["diabetes", "hypertension"],
             "medications": ["metformin", "lisinopril"],
             "research_type": "clinical_trial_phase_2",
-            "consent_level": "informed_consent"
+            "consent_level": "informed_consent",
         }
 
         risk_evaluation = await panacea_service.evaluate_research_participant_risk(participant_data)
@@ -60,16 +62,8 @@ async def main():
             "active_users": 89,
             "research_projects": 5,
             "total_rewards_distributed": 50000,
-            "research_categories": [
-                "oncology",
-                "rare_diseases",
-                "neurology"
-            ],
-            "geographic_distribution": {
-                "north_america": 45,
-                "europe": 32,
-                "asia": 12
-            }
+            "research_categories": ["oncology", "rare_diseases", "neurology"],
+            "geographic_distribution": {"north_america": 45, "europe": 32, "asia": 12},
         }
 
         metrics_analysis = await panacea_service.submit_panas_metrics(token_metrics)

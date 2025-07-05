@@ -6,11 +6,10 @@ para conectar el proyecto panas_token con el pipeline de APIs.
 """
 
 import os
+from typing import Any, Dict, Optional
+
 import httpx
-from typing import Dict, Any, Optional
-from datetime import datetime
 from dotenv import load_dotenv
-from datetime import datetime
 
 load_dotenv()
 
@@ -26,25 +25,26 @@ class PanaceaAPIClient:
             base_url: URL base de la API de Panacea. Por defecto desde .env
             api_key: Clave API si es necesaria para autenticación
         """
-        self.base_url = base_url or os.getenv("PANACEA_API_URL", "https://panacea-api-central.herokuapp.com")
+        self.base_url = base_url or os.getenv(
+            "PANACEA_API_URL", "https://panacea-api-central.herokuapp.com"
+        )
         self.api_key = api_key or os.getenv("PANACEA_API_KEY")
 
         # Modo fallback para cuando Panacea no esté disponible
         self.fallback_mode = os.getenv("PANACEA_FALLBACK_MODE", "true").lower() == "true"
 
         # Configurar headers por defecto
-        self.headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "PanasToken/1.0"
-        }
+        self.headers = {"Content-Type": "application/json", "User-Agent": "PanasToken/1.0"}
 
         if self.api_key:
             self.headers["Authorization"] = f"Bearer {self.api_key}"
 
     def _is_panacea_available(self) -> bool:
         """Verificar si Panacea API está disponible."""
-        return not (self.base_url.startswith("https://your-panacea") or
-                   self.base_url.startswith("https://panacea-api-central.herokuapp.com"))
+        return not (
+            self.base_url.startswith("https://your-panacea")
+            or self.base_url.startswith("https://panacea-api-central.herokuapp.com")
+        )
 
     async def _fallback_response(self, operation: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Respuesta de fallback cuando Panacea no está disponible."""
@@ -54,7 +54,7 @@ class PanaceaAPIClient:
             "message": "Panacea API no disponible, usando respuesta simulada",
             "data": data,
             "fallback": True,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
     async def chat_with_ai(self, prompt: str) -> Dict[str, Any]:
@@ -76,7 +76,7 @@ class PanaceaAPIClient:
                     f"{self.base_url}/chat/",
                     json={"prompt": prompt},
                     headers=self.headers,
-                    timeout=30.0
+                    timeout=30.0,
                 )
                 response.raise_for_status()
                 return response.json()
@@ -102,7 +102,7 @@ class PanaceaAPIClient:
                     f"{self.base_url}/sim/risk/",
                     json=patient_data,
                     headers=self.headers,
-                    timeout=30.0
+                    timeout=30.0,
                 )
                 response.raise_for_status()
                 return response.json()
@@ -122,9 +122,7 @@ class PanaceaAPIClient:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(
-                    f"{self.base_url}/health",
-                    headers=self.headers,
-                    timeout=10.0
+                    f"{self.base_url}/health", headers=self.headers, timeout=10.0
                 )
                 response.raise_for_status()
                 return response.json()
@@ -146,7 +144,7 @@ class PanaceaAPIClient:
             "token_name": "PANAS",
             "token_type": "algorand",
             "analysis_type": "medical_token",
-            "data": token_data
+            "data": token_data,
         }
 
         if self.fallback_mode and not self._is_panacea_available():
@@ -158,7 +156,7 @@ class PanaceaAPIClient:
                     f"{self.base_url}/analyze/token/",
                     json=payload,
                     headers=self.headers,
-                    timeout=45.0
+                    timeout=45.0,
                 )
                 response.raise_for_status()
                 return response.json()
@@ -179,7 +177,7 @@ class PanaceaIntegrationService:
             "network": os.getenv("ALGORAND_NETWORK", "testnet"),
             "total_supply": os.getenv("PANAS_TOTAL_SUPPLY", "1000000"),
             "decimals": int(os.getenv("PANAS_DECIMALS", "6")),
-            "use_case": "medical_research_incentive"
+            "use_case": "medical_research_incentive",
         }
 
     async def analyze_medical_data_with_ai(self, medical_prompt: str) -> Dict[str, Any]:
@@ -202,7 +200,9 @@ class PanaceaIntegrationService:
 
         return await self.panacea_client.chat_with_ai(enhanced_prompt)
 
-    async def evaluate_research_participant_risk(self, participant_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def evaluate_research_participant_risk(
+        self, participant_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Evaluar riesgo de participante en investigación médica.
 
@@ -219,7 +219,7 @@ class PanaceaIntegrationService:
             "medical_history": participant_data.get("medical_history", []),
             "current_medications": participant_data.get("medications", []),
             "research_type": participant_data.get("research_type", "general"),
-            "consent_level": participant_data.get("consent_level", "basic")
+            "consent_level": participant_data.get("consent_level", "basic"),
         }
 
         return await self.panacea_client.analyze_surgery_risk(adapted_data)
@@ -241,8 +241,8 @@ class PanaceaIntegrationService:
             "network_stats": {
                 "transactions": metrics.get("transaction_count", 0),
                 "active_users": metrics.get("active_users", 0),
-                "research_projects": metrics.get("research_projects", 0)
-            }
+                "research_projects": metrics.get("research_projects", 0),
+            },
         }
 
         return await self.panacea_client.submit_token_analysis(token_metrics)
@@ -263,6 +263,6 @@ class PanaceaIntegrationService:
             "available_services": [
                 "medical_ai_analysis",
                 "risk_evaluation",
-                "token_metrics_analysis"
-            ]
+                "token_metrics_analysis",
+            ],
         }
