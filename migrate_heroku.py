@@ -10,18 +10,22 @@ import sys
 
 async def create_tables():
     """Crear las tablas principales del sistema"""
-    
+
     # Obtener URL de la base de datos desde variables de entorno
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         print("❌ DATABASE_URL no está configurada")
         return False
     
+    # Corregir el esquema de URL para asyncpg
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
     try:
         # Conectar a la base de datos
         conn = await asyncpg.connect(database_url)
         print("✅ Conectado a PostgreSQL")
-        
+
         # Crear tabla system_metrics
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS system_metrics (
@@ -35,7 +39,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla system_metrics creada")
-        
+
         # Crear tabla api_logs
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS api_logs (
@@ -53,7 +57,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla api_logs creada")
-        
+
         # Crear tabla ai_analyses
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS ai_analyses (
@@ -70,7 +74,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla ai_analyses creada")
-        
+
         # Crear tabla medical_data
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS medical_data (
@@ -86,7 +90,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla medical_data creada")
-        
+
         # Crear tabla panas_tokens
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS panas_tokens (
@@ -104,7 +108,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla panas_tokens creada")
-        
+
         # Crear tabla users
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -121,7 +125,7 @@ async def create_tables():
             );
         """)
         print("✅ Tabla users creada")
-        
+
         # Crear índices para optimización
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_system_metrics_timestamp ON system_metrics(timestamp);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_api_logs_timestamp ON api_logs(timestamp);")
@@ -130,7 +134,7 @@ async def create_tables():
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_panas_tokens_transaction_id ON panas_tokens(transaction_id);")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
         print("✅ Índices creados")
-        
+
         # Insertar datos de ejemplo
         await conn.execute("""
             INSERT INTO system_metrics (metric_name, metric_value, metric_type, metadata)
@@ -138,11 +142,11 @@ async def create_tables():
             ON CONFLICT DO NOTHING;
         """)
         print("✅ Datos de ejemplo insertados")
-        
+
         await conn.close()
         print("✅ Migraciones completadas exitosamente")
         return True
-        
+
     except Exception as e:
         print(f"❌ Error durante las migraciones: {e}")
         return False
