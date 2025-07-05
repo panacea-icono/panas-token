@@ -223,6 +223,38 @@ services:
     networks:
       - panas-network
 
+  # Panacea API Central - Integración con repositorio principal
+  panacea-api-central:
+    build:
+      context: .
+      dockerfile: ./panacea-central/Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=true
+      - PANAS_TOKEN_API_URL=http://panas-api:8000
+      - MEDICAL_GPT_API_URL=http://medical-gpt-api:5003
+      - TELEGRAM_WEBHOOK_URL=http://telegram-bots:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=postgresql://panas_user:panas_password@postgres:5432/panacea_central_db
+      - REDIS_URL=redis://redis:6379
+    env_file:
+      - .env
+      - .env.compose
+    volumes:
+      - ./panacea-central:/app/data
+      - ./logs/panacea:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - panas-api
+      - medical-gpt-api
+      - postgres
+      - redis
+    networks:
+      - panas-network
+
 volumes:
   redis_data:
   postgres_data:

@@ -1,0 +1,23 @@
+{
+  "repository": {
+    "url": "https://github.com/panacea-icono/panacea-api-central.git",
+    "local_path": "./panacea-api-central-repo",
+    "last_update": "2025-07-05T04:52:38Z"
+  },
+  "integration": {
+    "panas_token_api": "http://panas-api:8000",
+    "medical_gpt_api": "http://medical-gpt-api:5003",
+    "telegram_bots": "http://telegram-bots:8080",
+    "nfd_domains": [
+      "10.panas.algo",
+      "tokenizado.algo", 
+      "panacea.icono.algo",
+      "activo.algo"
+    ]
+  },
+  "services": {
+    "health_check_interval": 30,
+    "sync_interval": 300,
+    "retry_attempts": 3
+  }
+}

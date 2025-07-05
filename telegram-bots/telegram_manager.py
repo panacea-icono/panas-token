@@ -7,8 +7,23 @@ Integración completa con NFDomains de Algorand
 
 import os
 import asyncio
-import logging
-from telegram import Update, Bot
+import lo**👨‍⚕️ Asistentes Médicos (ChatGPT):**
+- `/consulta` - Consulta médica general
+- `/vaser` - Consulta Clínica Vaser
+- `/medico` - Asistente médico especializado
+- `/cita` - Agendar cita con Liliana
+- `/asistentes` - Ver todos los asistentes
+
+**🏥 Panacea API Central:**
+- `/panacea` - Estado de integración
+- `/sync` - Sincronizar datos con Panacea
+- `/activos` - Ver activos médicos tokenizados
+- `/historial` - Consultar historial médico
+
+**🔬 Investigación Médica:**
+- `/studies` - Estudios disponibles
+- `/participate` - Unirse a estudio
+- `/rewards` - Ver recompensas ganadastelegram import Update, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import aiohttp
 import redis.asyncio as redis
@@ -25,11 +40,16 @@ import sys
 sys.path.append('/app/../ai-models/chatgpt-medical')
 from medical_gpt_integration import medical_gpt
 
+# Importar integración Panacea API Central
+sys.path.append('/app/../panacea-central')
+from panacea_integration import panacea_integration
+
 # Configuración
 PANAS_API_URL = os.getenv("PANAS_API_URL", "http://localhost:8000")
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 BOLIVIACHIC_WEBSITE = "https://boliviachic.com"
+PANACEA_API_URL = os.getenv("PANACEA_API_URL", "http://panacea-api-central:8000")
 
 # Tokens de los bots con nombres descriptivos
 BOT_TOKENS = {
@@ -115,6 +135,12 @@ class PanasMainBot(PanasTelegramBot):
         self.application.add_handler(CommandHandler("medico", self.medical_assistant_command))
         self.application.add_handler(CommandHandler("cita", self.appointment_command))
         self.application.add_handler(CommandHandler("asistentes", self.list_medical_assistants_command))
+        
+        # Comandos Panacea API Central
+        self.application.add_handler(CommandHandler("panacea", self.panacea_status_command))
+        self.application.add_handler(CommandHandler("sync", self.sync_user_data_command))
+        self.application.add_handler(CommandHandler("activos", self.medical_assets_command))
+        self.application.add_handler(CommandHandler("historial", self.medical_history_command))
 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Comando /start"""
@@ -519,301 +545,188 @@ Los NFDomains son dominios descentralizados en la blockchain de Algorand que fun
             logger.error(f"Error listando asistentes: {e}")
             await update.message.reply_text("❌ Error obteniendo información de asistentes.")
 
-    async def _get_user_medical_context(self, user_id: int) -> Dict:
-        """Obtener contexto médico del usuario para las consultas"""
-        context = {"user_id": user_id}
-
+    # ====== COMANDOS PANACEA API CENTRAL ======
+    
+    async def panacea_status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Comando /panacea - Estado de integración con Panacea API Central"""
+        await update.message.reply_text("🔄 Verificando estado de Panacea API Central...")
+        
+        try:
+            async with panacea_integration as api:
+                status = await api.get_integration_status()
+                
+                if status.get("panacea_api_status") == "healthy":
+                    reply_msg = "✅ **Panacea API Central - Estado Activo**\n\n"
+                    reply_msg += f"🌐 **Repositorio:** https://github.com/panacea-icono/panacea-api-central\n"
+                    reply_msg += f"🔗 **Integración PANAS:** Activa\n"
+                    reply_msg += f"🤖 **ChatGPT Médico:** Conectado\n"
+                    reply_msg += f"🌐 **NFDomains:** Integrado\n\n"
+                    reply_msg += "**Endpoints disponibles:**\n"
+                    
+                    for endpoint in status.get("available_endpoints", []):
+                        reply_msg += f"• {endpoint}\n"
+                        
+                    reply_msg += f"\n⏰ **Última verificación:** {status.get('last_check')}"
+                else:
+                    reply_msg = f"❌ **Error en Panacea API Central**\n\n"
+                    reply_msg += f"Error: {status.get('error', 'Desconocido')}\n"
+                    reply_msg += f"🌐 **Repositorio:** https://github.com/panacea-icono/panacea-api-central"
+                
+            await update.message.reply_text(reply_msg, parse_mode='Markdown', disable_web_page_preview=True)
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado Panacea: {e}")
+            await update.message.reply_text("❌ Error verificando estado de Panacea API Central")
+    
+    async def sync_user_data_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Comando /sync - Sincronizar datos del usuario con Panacea Central"""
+        user_id = str(update.effective_user.id)
+        
+        await update.message.reply_text("🔄 Sincronizando tus datos con Panacea Central...")
+        
+        try:
+            # Obtener datos PANAS del usuario
+            panas_data = await self._get_user_panas_data(user_id)
+            
+            async with panacea_integration as api:
+                result = await api.sync_user_data(user_id, panas_data)
+                
+                if result.get("success"):
+                    reply_msg = "✅ **Sincronización Completada**\n\n"
+                    reply_msg += f"👤 **Usuario:** {user_id}\n"
+                    reply_msg += f"💰 **Balance PANAS:** {panas_data.get('balance', 0)}\n"
+                    reply_msg += f"🌐 **Dominios NFD:** {len(panas_data.get('nfd_domains', []))}\n"
+                    reply_msg += f"🏥 **Consultas médicas:** {len(panas_data.get('consultations', []))}\n"
+                    reply_msg += f"📊 **Estado:** Sincronizado con Panacea Central"
+                else:
+                    reply_msg = f"❌ **Error en sincronización**\n\nDetalle: {result.get('error')}"
+                
+            await update.message.reply_text(reply_msg, parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Error sincronizando usuario {user_id}: {e}")
+            await update.message.reply_text("❌ Error durante la sincronización")
+    
+    async def medical_assets_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Comando /activos - Ver activos médicos tokenizados"""
+        user_id = str(update.effective_user.id)
+        
+        await update.message.reply_text("🔍 Consultando tus activos médicos tokenizados...")
+        
+        try:
+            async with panacea_integration as api:
+                assets = await api.get_medical_assets(user_id)
+                
+                if assets.get("success") and assets.get("assets"):
+                    reply_msg = "🏥 **Tus Activos Médicos Tokenizados**\n\n"
+                    
+                    for asset in assets["assets"]:
+                        reply_msg += f"🪙 **{asset.get('name', 'Asset')}**\n"
+                        reply_msg += f"   Tipo: {asset.get('type', 'N/A')}\n"
+                        reply_msg += f"   Valor: {asset.get('value', 0)} PANAS\n"
+                        reply_msg += f"   Estado: {asset.get('status', 'N/A')}\n\n"
+                    
+                    reply_msg += f"📊 **Total de activos:** {len(assets['assets'])}\n"
+                    reply_msg += "💡 *Los activos médicos representan tu participación en investigación*"
+                
+                elif assets.get("success") and not assets.get("assets"):
+                    reply_msg = "📋 **No tienes activos médicos aún**\n\n"
+                    reply_msg += "Para obtener activos médicos tokenizados:\n"
+                    reply_msg += "• Participa en consultas médicas\n"
+                    reply_msg += "• Completa estudios de investigación\n"
+                    reply_msg += "• Usa `/consulta` para empezar"
+                
+                else:
+                    reply_msg = f"❌ **Error consultando activos**\n\nDetalle: {assets.get('error')}"
+                
+            await update.message.reply_text(reply_msg, parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Error consultando activos médicos: {e}")
+            await update.message.reply_text("❌ Error consultando activos médicos")
+    
+    async def medical_history_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Comando /historial - Ver historial médico en Panacea Central"""
+        user_id = str(update.effective_user.id)
+        
+        await update.message.reply_text("📋 Consultando tu historial médico...")
+        
+        try:
+            async with panacea_integration as api:
+                # Obtener historial médico del usuario
+                history_response = await api._make_request("GET", f"/medical/records?user_id={user_id}")
+                
+                if history_response.get("success") and history_response.get("records"):
+                    reply_msg = "📋 **Tu Historial Médico**\n\n"
+                    
+                    for record in history_response["records"][-5:]:  # Últimos 5 registros
+                        date = record.get("date", "N/A")
+                        consultation_type = record.get("type", "General")
+                        status = record.get("status", "Completada")
+                        
+                        reply_msg += f"📅 **{date}**\n"
+                        reply_msg += f"   Tipo: {consultation_type}\n"
+                        reply_msg += f"   Estado: {status}\n"
+                        
+                        if record.get("reward_panas"):
+                            reply_msg += f"   Recompensa: {record['reward_panas']} PANAS\n"
+                        
+                        reply_msg += "\n"
+                    
+                    total_records = len(history_response["records"])
+                    reply_msg += f"📊 **Total de registros:** {total_records}\n"
+                    reply_msg += "💡 *Tus datos están seguros en Panacea Central*"
+                
+                elif history_response.get("success") and not history_response.get("records"):
+                    reply_msg = "📋 **No tienes historial médico aún**\n\n"
+                    reply_msg += "Para crear tu historial médico:\n"
+                    reply_msg += "• Realiza consultas con `/consulta`\n"
+                    reply_msg += "• Agenda citas con `/cita`\n"
+                    reply_msg += "• Participa en estudios médicos"
+                
+                else:
+                    reply_msg = f"❌ **Error consultando historial**\n\nDetalle: {history_response.get('error')}"
+                
+            await update.message.reply_text(reply_msg, parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Error consultando historial médico: {e}")
+            await update.message.reply_text("❌ Error consultando historial médico")
+    
+    async def _get_user_panas_data(self, user_id: str) -> Dict[str, Any]:
+        """Obtener datos completos PANAS del usuario para sincronización"""
+        panas_data = {"user_id": user_id, "nfd_domains": [], "consultations": []}
+        
         try:
             # Obtener balance PANAS
             balance_result = await self.call_panas_api(f"/users/{user_id}/balance")
             if "balance" in balance_result:
-                context["panas_balance"] = balance_result["balance"]
-
-            # Obtener dominio NFD asociado (si existe)
-            nfd_result = await nfd_api.get_user_nfd(user_id)
-            if nfd_result and "nfd_name" in nfd_result:
-                context["nfd_domain"] = nfd_result["nfd_name"]
-
-            # Obtener historial médico básico (si está disponible)
-            medical_result = await self.call_panas_api(f"/users/{user_id}/medical_profile")
-            if "medical_history" in medical_result:
-                context["medical_history"] = medical_result["medical_history"]
-
+                panas_data["balance"] = balance_result["balance"]
+            
+            # Obtener dominios NFD
+            async with panas_nfd as manager:
+                user_domains = []
+                for domain_name in manager.domains.keys():
+                    domain_info = await manager.get_domain_info(domain_name)
+                    if domain_info.get("status") == "active":
+                        user_domains.append({
+                            "domain": domain_name,
+                            "type": domain_info["config"]["type"],
+                            "features": domain_info["config"]["features"]
+                        })
+                panas_data["nfd_domains"] = user_domains
+            
+            # Obtener historial de consultas del cache Redis
+            if self.redis_client:
+                consultation_key = f"user:{user_id}:consultations"
+                consultations_data = await self.redis_client.get(consultation_key)
+                if consultations_data:
+                    panas_data["consultations"] = json.loads(consultations_data)
+            
         except Exception as e:
-            logger.warning(f"Error obteniendo contexto médico para usuario {user_id}: {e}")
-
-        return context
-
-    # ====== FIN COMANDOS MÉDICOS ======
-
-class AIAssistantBot(PanasTelegramBot):
-    """Bot asistente de IA usando Ollama"""
-
-    def __init__(self, token: str):
-        super().__init__(token, "ai_assistant")
-        self.setup_handlers()
-
-    def setup_handlers(self):
-        """Configurar comandos del bot de IA"""
-        self.application.add_handler(CommandHandler("start", self.start_command))
-        self.application.add_handler(CommandHandler("ask", self.ask_command))
-        self.application.add_handler(CommandHandler("models", self.models_command))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
-
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /start para bot de IA"""
-        welcome_msg = """
-🤖 **Asistente de IA PANAS**
-
-Soy tu asistente de inteligencia artificial para consultas sobre:
-- 🔬 Investigación médica
-- 📊 Análisis de datos
-- 🧬 Biotecnología
-- 💡 Consultas generales
-
-**Comandos:**
-- `/ask <pregunta>` - Hacer una pregunta
-- `/models` - Ver modelos disponibles
-- O simplemente escribe tu pregunta directamente
-
-¡Estoy aquí para ayudarte! 🚀
-        """
-        await update.message.reply_text(welcome_msg)
-
-    async def ask_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /ask"""
-        if not context.args:
-            await update.message.reply_text("❓ Por favor, incluye tu pregunta después de /ask")
-            return
-
-        question = " ".join(context.args)
-        await self.process_ai_query(update, question)
-
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Manejar mensajes directos"""
-        question = update.message.text
-        await self.process_ai_query(update, question)
-
-    async def process_ai_query(self, update: Update, question: str):
-        """Procesar consulta de IA"""
-        # Enviar mensaje de "escribiendo..."
-        await update.message.reply_text("🤖 Pensando...")
-
-        # Preparar prompt especializado
-        prompt = f"""
-Como asistente de IA especializado en PANAS Token e investigación médica, responde esta pregunta:
-
-Pregunta: {question}
-
-Respuesta (enfócate en ser útil, preciso y relacionado con investigación médica cuando sea relevante):
-        """
-
-        # Llamar a Ollama
-        response = await self.call_ollama_api(prompt, "llama2")
-
-        # Enviar respuesta
-        if len(response) > 4000:
-            # Dividir respuesta larga
-            for i in range(0, len(response), 4000):
-                await update.message.reply_text(response[i:i+4000])
-        else:
-            await update.message.reply_text(f"🤖 {response}")
-
-    async def models_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /models"""
-        models_info = """
-🤖 **Modelos de IA Disponibles:**
-
-📊 **Ollama Local:**
-- Llama 2 (Principal)
-- CodeQwen (Código)
-- Mistral 7B (Rápido)
-
-🔬 **Especializados:**
-- BioGPT (Medicina)
-- PubMedBERT (Literatura médica)
-- ChemBERTa (Química)
-
-Estado: ✅ Funcionando
-Latencia: ~2-5 segundos
-        """
-        await update.message.reply_text(models_info)
-
-class CodeHelperBot(PanasTelegramBot):
-    """Bot especializado en ayuda de código"""
-
-    def __init__(self, token: str):
-        super().__init__(token, "code_helper")
-        self.setup_handlers()
-
-    def setup_handlers(self):
-        """Configurar comandos del bot de código"""
-        self.application.add_handler(CommandHandler("start", self.start_command))
-        self.application.add_handler(CommandHandler("code", self.code_command))
-        self.application.add_handler(CommandHandler("fix", self.fix_command))
-        self.application.add_handler(CommandHandler("explain", self.explain_command))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_code))
-
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /start para bot de código"""
-        welcome_msg = """
-💻 **Asistente de Código PANAS**
-
-Especializado en:
-- 🐍 Python (Blockchain, IA, APIs)
-- 🌐 JavaScript/TypeScript
-- 🗃️ SQL y bases de datos
-- ⛓️ Algorand Smart Contracts
-- 🧠 Machine Learning
-
-**Comandos:**
-- `/code <descripción>` - Generar código
-- `/fix <código>` - Corregir errores
-- `/explain <código>` - Explicar código
-- O envía código directamente para análisis
-
-¡Listo para programar! 🚀
-        """
-        await update.message.reply_text(welcome_msg)
-
-    async def code_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /code"""
-        if not context.args:
-            await update.message.reply_text("📝 Describe qué código necesitas después de /code")
-            return
-
-        description = " ".join(context.args)
-        await self.generate_code(update, description)
-
-    async def fix_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /fix"""
-        if not context.args:
-            await update.message.reply_text("🔧 Proporciona el código a corregir después de /fix")
-            return
-
-        code = " ".join(context.args)
-        await self.fix_code(update, code)
-
-    async def explain_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Comando /explain"""
-        if not context.args:
-            await update.message.reply_text("❓ Proporciona el código a explicar después de /explain")
-            return
-
-        code = " ".join(context.args)
-        await self.explain_code(update, code)
-
-    async def handle_code(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Manejar código enviado directamente"""
-        text = update.message.text
-
-        # Detectar si es código (heurística simple)
-        if any(keyword in text.lower() for keyword in ['def ', 'function', 'class ', 'import ', 'const ', 'let ', 'var ']):
-            await self.explain_code(update, text)
-        else:
-            await self.generate_code(update, text)
-
-    async def generate_code(self, update: Update, description: str):
-        """Generar código usando CodeQwen"""
-        await update.message.reply_text("💻 Generando código...")
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                data = {
-                    "prompt": description,
-                    "language": "python",
-                    "task": "generate",
-                    "max_tokens": 2048
-                }
-                async with session.post("http://codeqwen-api:5000/generate", json=data) as response:
-                    result = await response.json()
-                    code = result.get("generated_code", "Error generando código")
-
-                    # Formatear código para Telegram
-                    formatted_code = f"```python\n{code}\n```"
-                    await update.message.reply_text(formatted_code, parse_mode="Markdown")
-
-        except Exception as e:
-            await update.message.reply_text(f"❌ Error generando código: {e}")
-
-    async def fix_code(self, update: Update, code: str):
-        """Corregir código"""
-        await update.message.reply_text("🔧 Analizando y corrigiendo código...")
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                data = {
-                    "prompt": code,
-                    "language": "python",
-                    "task": "fix",
-                    "max_tokens": 2048
-                }
-                async with session.post("http://codeqwen-api:5000/generate", json=data) as response:
-                    result = await response.json()
-                    fixed_code = result.get("generated_code", "Error corrigiendo código")
-
-                    formatted_code = f"🔧 **Código Corregido:**\n```python\n{fixed_code}\n```"
-                    await update.message.reply_text(formatted_code, parse_mode="Markdown")
-
-        except Exception as e:
-            await update.message.reply_text(f"❌ Error corrigiendo código: {e}")
-
-    async def explain_code(self, update: Update, code: str):
-        """Explicar código"""
-        await update.message.reply_text("📖 Analizando código...")
-
-        # Usar Ollama para explicación
-        prompt = f"""
-Explica este código paso a paso de manera clara y educativa:
-
-```
-{code}
-```
-
-Explicación:
-        """
-
-        explanation = await self.call_ollama_api(prompt, "llama2")
-        await update.message.reply_text(f"📖 **Explicación:**\n{explanation}")
-
-async def main():
-    """Función principal para ejecutar todos los bots"""
-    bots = []
-
-    # Crear y configurar bots
-    if BOT_TOKENS["panas_main"]:
-        panas_bot = PanasMainBot(BOT_TOKENS["panas_main"])
-        await panas_bot.setup_redis()
-        bots.append(panas_bot)
-        logger.info("✅ Bot PANAS Main configurado")
-
-    if BOT_TOKENS["ai_assistant"]:
-        ai_bot = AIAssistantBot(BOT_TOKENS["ai_assistant"])
-        await ai_bot.setup_redis()
-        bots.append(ai_bot)
-        logger.info("✅ Bot AI Assistant configurado")
-
-    if BOT_TOKENS["code_helper"]:
-        code_bot = CodeHelperBot(BOT_TOKENS["code_helper"])
-        await code_bot.setup_redis()
-        bots.append(code_bot)
-        logger.info("✅ Bot Code Helper configurado")
-
-    if not bots:
-        logger.error("❌ No se configuraron bots. Verifica los tokens.")
-        return
-
-    # Iniciar todos los bots
-    logger.info(f"🚀 Iniciando {len(bots)} bots...")
-
-    tasks = []
-    for bot in bots:
-        task = asyncio.create_task(bot.application.run_polling())
-        tasks.append(task)
-
-    # Ejecutar todos los bots concurrentemente
-    await asyncio.gather(*tasks)
-
-if __name__ == "__main__":
-    logger.info("🤖 Iniciando Telegram Bot Manager...")
-    asyncio.run(main())
+            logger.warning(f"Error obteniendo datos PANAS para usuario {user_id}: {e}")
+        
+        return panas_data
+    
+    # ====== FIN COMANDOS PANACEA ======
+````

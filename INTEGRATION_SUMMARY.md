@@ -37,17 +37,19 @@
    - URL: https://app.nf.domains/name/activo.algo
    - Propósito: Gestión y trading de activos tokenizados
 
-### 🔗 Sitio Web Principal
+### 🔗 Sitio Web Principal e Integraciones
 - **BoliviaChic.com**: https://boliviachic.com
+- **Panacea API Central**: https://github.com/panacea-icono/panacea-api-central
 
 ## 🏗️ Arquitectura de Servicios
 
 ### Docker Compose Services
 
 1. **panas-api** - API principal FastAPI
-2. **medical-gpt-api** - Servicio de integración ChatGPT médico
-3. **telegram-bots** - Manager de bots Telegram
-4. **ollama** - Modelos locales de IA
+2. **panacea-api-central** - Integración con repositorio Panacea
+3. **medical-gpt-api** - Servicio de integración ChatGPT médico
+4. **telegram-bots** - Manager de bots Telegram
+5. **ollama** - Modelos locales de IA
 5. **codeqwen-api** - Modelo especializado en código
 6. **whisper-api** - Speech-to-Text
 7. **qdrant** - Vector database
@@ -155,7 +157,7 @@ docker compose up -d
 
 ### Multi-Bot Architecture
 - Bot principal PANAS (token 1)
-- Bot asistente IA (token 2)  
+- Bot asistente IA (token 2)
 - Bot ayudante código (token 3)
 - Funcionalidades especializadas por bot
 
