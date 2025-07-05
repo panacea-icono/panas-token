@@ -2,7 +2,7 @@
     // Disabled due to matangover.mypy extension not supporting monorepos
     // To be addressed as part of https://github.com/matangover/mypy-vscode/issues/82
     "mypy.enabled": false,
-    
+
     // Python configuration
     "python.defaultInterpreterPath": "./venv/bin/python",
     "python.linting.enabled": true,
@@ -18,13 +18,13 @@
     ],
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic",
-    
+
     // Editor configuration
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
     },
-    
+
     // File associations
     "files.associations": {
         "*.yaml": "yaml",
@@ -33,12 +33,12 @@
         ".dockerignore": "ignore",
         ".gitignore": "ignore"
     },
-    
+
     // YAML configuration
     "yaml.validate": true,
     "yaml.format.enable": true,
     "yaml.completion": true,
-    
+
     // File exclusions
     "files.exclude": {
         "**/__pycache__": true,

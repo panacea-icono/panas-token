@@ -12,16 +12,16 @@ echo "================================="
 check_file_errors() {
     local file="$1"
     local description="$2"
-    
+
     echo ""
     echo "📄 Checking $description: $(basename "$file")"
     echo "-------------------------------------------"
-    
+
     if [[ ! -f "$file" ]]; then
         echo "❌ File not found: $file"
         return 1
     fi
-    
+
     # Verificar sintaxis Python
     if [[ "$file" == *.py ]]; then
         echo "🐍 Python syntax check..."
@@ -31,14 +31,14 @@ check_file_errors() {
             echo "❌ Python syntax error:"
             python3 -m py_compile "$file"
         fi
-        
+
         # Verificar con flake8 si está disponible
         if command -v flake8 &> /dev/null; then
             echo "🔍 Flake8 check..."
             flake8 "$file" --max-line-length=100 --ignore=E501,W503 || true
         fi
     fi
-    
+
     # Verificar sintaxis YAML
     if [[ "$file" == *.yaml ]] || [[ "$file" == *.yml ]]; then
         echo "📝 YAML syntax check..."
@@ -51,7 +51,7 @@ check_file_errors() {
             python3 -c "import yaml; yaml.safe_load(open('$file'))"
         fi
     fi
-    
+
     # Verificar sintaxis shell script
     if [[ "$file" == *.sh ]]; then
         echo "🐚 Shell script check..."
@@ -64,7 +64,7 @@ check_file_errors() {
             bash -n "$file"
         fi
     fi
-    
+
     # Verificar Dockerfile
     if [[ "$(basename "$file")" == "Dockerfile" ]]; then
         echo "🐳 Dockerfile check..."
@@ -79,7 +79,7 @@ check_file_errors() {
 # Lista de archivos principales para verificar
 FILES_TO_CHECK=(
     "/Users/kuchimac/panas_token/panas_token/main.py:FastAPI Backend"
-    "/Users/kuchimac/panas_token/panas_token/openai_integration.py:OpenAI Integration" 
+    "/Users/kuchimac/panas_token/panas_token/openai_integration.py:OpenAI Integration"
     "/Users/kuchimac/panas_token/panas_token/panacea_integration.py:Panacea Integration"
     "/Users/kuchimac/panas_token/panas_token/Dockerfile:Docker Configuration"
     "/Users/kuchimac/panas_token/panas_token/docker-compose.yml:Docker Compose"

@@ -86,3 +86,111 @@ The frontend starter also provides an example of interactions with your HelloWor
 ## Next Steps
 
 You can take this project and customize it to build your own decentralized applications on Algorand. Make sure to understand how to use AlgoKit and how to write smart contracts for Algorand before you start.
+
+## 🗄️ Configuración de Base de Datos en Heroku
+
+### 📦 Scripts Disponibles
+
+1. **`setup_heroku_database.sh`** - Configuración completa de base de datos
+2. **`heroku_migrate.sh`** - Ejecutar migraciones después del deploy
+3. **`deploy_heroku.sh`** - Deploy completo con base de datos
+
+### 🚀 Configuración Paso a Paso
+
+#### 1. Configurar Base de Datos
+```bash
+# Configurar PostgreSQL y Redis en Heroku
+./setup_heroku_database.sh [app-name]
+
+# Esto configurará:
+# • PostgreSQL (essential-0, mini, o hobby-dev)
+# • Redis (mini o hobby-dev)
+# • Variables de entorno
+# • Estructura inicial de tablas
+```
+
+#### 2. Deploy de la Aplicación
+```bash
+# Deploy con configuración de BD incluida
+./deploy_heroku.sh [app-name]
+
+# O deploy paso a paso:
+heroku create [app-name]
+./setup_heroku_database.sh [app-name]
+./deploy_heroku.sh [app-name]
+```
+
+#### 3. Ejecutar Migraciones (si es necesario)
+```bash
+# Ejecutar migraciones adicionales
+./heroku_migrate.sh [app-name]
+```
+
+### 📊 Estructura de Base de Datos
+
+La aplicación crea automáticamente las siguientes tablas:
+
+```sql
+-- Métricas del sistema
+system_metrics (id, metric_name, metric_value, metric_data, created_at, updated_at)
+
+-- Logs de API
+api_logs (id, endpoint, method, status_code, response_time_ms, user_agent, ip_address, request_data, response_data, created_at)
+
+-- Análisis de AI
+ai_analyses (id, analysis_type, input_text, analysis_result, model_used, processing_time_ms, created_at)
+
+-- Datos médicos
+medical_data (id, participant_id, data_type, medical_data, risk_score, panacea_response, created_at, updated_at)
+
+-- Tokens PANAS
+panas_tokens (id, wallet_address, token_amount, transaction_type, transaction_hash, blockchain_network, created_at)
+
+-- Usuarios
+users (id, user_id, email, wallet_address, user_type, profile_data, created_at, updated_at)
+```
+
+### 🔗 Endpoints de Base de Datos
+
+La aplicación incluye endpoints para interactuar con la base de datos:
+
+```bash
+# Verificar estado de base de datos
+GET /database/status
+
+# Obtener métricas de la base de datos
+GET /metrics/database
+
+# Actualizar métricas
+POST /metrics/update
+```
+
+### 🛠️ Comandos Útiles
+
+```bash
+# Conectar a PostgreSQL en Heroku
+heroku pg:psql --app [app-name]
+
+# Ver información de la base de datos
+heroku pg:info --app [app-name]
+
+# Ver logs de la aplicación
+heroku logs --tail --app [app-name]
+
+# Backup de la base de datos
+heroku pg:backups:capture --app [app-name]
+
+# Reset de la base de datos (¡CUIDADO!)
+heroku pg:reset DATABASE_URL --app [app-name]
+```
+
+### 📋 Variables de Entorno Automáticas
+
+Heroku configura automáticamente:
+- `DATABASE_URL` - URL de conexión a PostgreSQL
+- `REDIS_URL` - URL de conexión a Redis
+
+La aplicación detecta automáticamente estas variables y:
+- ✅ Usa PostgreSQL en producción (Heroku)
+- ✅ Fallback a SQLite en desarrollo local
+- ✅ Cache con Redis cuando está disponible

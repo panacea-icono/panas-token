@@ -6,15 +6,90 @@ y se integra con el pipeline de Panacea API Central.
 """
 
 import os
+import asyncio
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+import asyncpg
+import aioredis
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from openai_integration import AIService
 from panacea_integration import PanaceaIntegrationService
+
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Configuración de base de datos
+DATABASE_URL = os.getenv("DATABASE_URL")
+REDIS_URL = os.getenv("REDIS_URL")
+
+# Pool de conexiones
+db_pool = None
+redis_pool = None
+
+
+async def init_database():
+    """Inicializar conexiones de base de datos"""
+    global db_pool, redis_pool
+    
+    try:
+        # Configurar PostgreSQL
+        if DATABASE_URL:
+            # Heroku proporciona URLs con postgres://, pero asyncpg necesita postgresql://
+            db_url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+            db_pool = await asyncpg.create_pool(
+                db_url,
+                min_size=1,
+                max_size=20,
+                command_timeout=60
+            )
+            logger.info("✅ PostgreSQL pool inicializado")
+        else:
+            logger.warning("⚠️ DATABASE_URL no configurada, usando SQLite local")
+            
+        # Configurar Redis
+        if REDIS_URL:
+            redis_pool = aioredis.ConnectionPool.from_url(
+                REDIS_URL,
+                max_connections=10,
+                retry_on_timeout=True
+            )
+            logger.info("✅ Redis pool inicializado")
+        else:
+            logger.warning("⚠️ REDIS_URL no configurada")
+            
+    except Exception as e:
+        logger.error(f"❌ Error inicializando base de datos: {e}")
+        raise
+
+
+async def get_db():
+    """Dependency para obtener conexión a base de datos"""
+    if db_pool:
+        async with db_pool.acquire() as connection:
+            yield connection
+    else:
+        # Fallback para desarrollo local
+        yield None
+
+
+async def get_redis():
+    """Dependency para obtener conexión a Redis"""
+    if redis_pool:
+        redis = aioredis.Redis(connection_pool=redis_pool)
+        try:
+            yield redis
+        finally:
+            await redis.close()
+    else:
+        yield None
+
 
 # Configuración de la aplicación
 app = FastAPI(
@@ -74,6 +149,37 @@ class TokenTransfer(BaseModel):
     to_address: str
     amount: int
     memo: Optional[str] = None
+
+
+# Event handlers para base de datos
+@app.on_event("startup")
+async def startup_event():
+    """Inicializar conexiones al arrancar la aplicación"""
+    try:
+        await init_database()
+        logger.info("🚀 Aplicación iniciada - Base de datos configurada")
+    except Exception as e:
+        logger.error(f"❌ Error en startup: {e}")
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cerrar conexiones al apagar la aplicación"""
+    global db_pool, redis_pool
+    
+    try:
+        if db_pool:
+            await db_pool.close()
+            logger.info("🔒 PostgreSQL pool cerrado")
+            
+        if redis_pool:
+            await redis_pool.disconnect()
+            logger.info("🔒 Redis pool cerrado")
+            
+        logger.info("👋 Aplicación cerrada correctamente")
+    except Exception as e:
+        logger.error(f"❌ Error en shutdown: {e}")
 
 
 # Endpoints de salud y estado
@@ -277,6 +383,165 @@ async def get_metrics_summary():
             "openai_service": "active",
             "algorand_network": "testnet",
         },
+    }
+
+
+# Endpoints de métricas con base de datos
+
+
+@app.get("/metrics/database")
+async def get_database_metrics(db=Depends(get_db)):
+    """Obtener métricas almacenadas en la base de datos."""
+    try:
+        if db is None:
+            return {
+                "status": "development",
+                "message": "Base de datos no configurada - usando datos mock",
+                "metrics": {
+                    "total_api_calls": 1250,
+                    "active_users": 89,
+                    "ai_analyses_count": 156,
+                    "medical_records_processed": 42
+                }
+            }
+        
+        # Consultar métricas reales de la base de datos
+        query = """
+        SELECT metric_name, metric_value, metric_data, updated_at 
+        FROM system_metrics 
+        ORDER BY metric_name
+        """
+        
+        rows = await db.fetch(query)
+        
+        metrics = {}
+        for row in rows:
+            metrics[row['metric_name']] = {
+                "value": float(row['metric_value']) if row['metric_value'] else 0,
+                "data": row['metric_data'],
+                "last_updated": row['updated_at'].isoformat() if row['updated_at'] else None
+            }
+        
+        return {
+            "status": "success",
+            "database": "postgresql",
+            "metrics": metrics,
+            "retrieved_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo métricas de DB: {e}")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
+
+
+@app.post("/metrics/update")
+async def update_metric(
+    metric_name: str,
+    metric_value: float,
+    metric_data: Optional[dict] = None,
+    db=Depends(get_db)
+):
+    """Actualizar una métrica en la base de datos."""
+    try:
+        if db is None:
+            return {
+                "status": "development",
+                "message": "Base de datos no configurada - simulando actualización",
+                "metric_name": metric_name,
+                "metric_value": metric_value
+            }
+        
+        # Actualizar o insertar métrica
+        query = """
+        INSERT INTO system_metrics (metric_name, metric_value, metric_data, updated_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (metric_name) DO UPDATE SET
+            metric_value = EXCLUDED.metric_value,
+            metric_data = EXCLUDED.metric_data,
+            updated_at = EXCLUDED.updated_at
+        RETURNING id, metric_name, metric_value
+        """
+        
+        result = await db.fetchrow(
+            query, 
+            metric_name, 
+            metric_value, 
+            metric_data or {}, 
+            datetime.now()
+        )
+        
+        return {
+            "status": "success",
+            "action": "metric_updated",
+            "metric": {
+                "id": result['id'],
+                "name": result['metric_name'],
+                "value": float(result['metric_value'])
+            },
+            "updated_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error actualizando métrica: {e}")
+        raise HTTPException(status_code=500, detail=f"Error actualizando métrica: {str(e)}")
+
+
+@app.get("/database/status")
+async def get_database_status(db=Depends(get_db), redis=Depends(get_redis)):
+    """Verificar el estado de las conexiones de base de datos."""
+    status = {
+        "timestamp": datetime.now().isoformat(),
+        "postgresql": {"status": "disconnected", "details": None},
+        "redis": {"status": "disconnected", "details": None}
+    }
+    
+    # Verificar PostgreSQL
+    try:
+        if db is not None:
+            result = await db.fetchrow("SELECT version() as version, now() as current_time")
+            status["postgresql"] = {
+                "status": "connected",
+                "version": result['version'][:50] + "..." if len(result['version']) > 50 else result['version'],
+                "server_time": result['current_time'].isoformat(),
+                "connection_pool": "active"
+            }
+        else:
+            status["postgresql"]["details"] = "DATABASE_URL not configured"
+    except Exception as e:
+        status["postgresql"] = {
+            "status": "error",
+            "details": str(e)[:100]
+        }
+    
+    # Verificar Redis
+    try:
+        if redis is not None:
+            await redis.ping()
+            info = await redis.info()
+            status["redis"] = {
+                "status": "connected",
+                "version": info.get('redis_version', 'unknown'),
+                "memory_usage": info.get('used_memory_human', 'unknown'),
+                "connected_clients": info.get('connected_clients', 0)
+            }
+        else:
+            status["redis"]["details"] = "REDIS_URL not configured"
+    except Exception as e:
+        status["redis"] = {
+            "status": "error",
+            "details": str(e)[:100]
+        }
+    
+    # Determinar estado general
+    overall_status = "healthy"
+    if status["postgresql"]["status"] == "error" or status["redis"]["status"] == "error":
+        overall_status = "degraded"
+    elif status["postgresql"]["status"] == "disconnected" and status["redis"]["status"] == "disconnected":
+        overall_status = "development"
+    
+    return {
+        "overall_status": overall_status,
+        "databases": status
     }
 
 

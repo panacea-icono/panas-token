@@ -13,30 +13,30 @@ cd /Users/kuchimac/panas_token/panas_token
 # Función para corregir archivos Python
 fix_python_files() {
     echo "🐍 Fixing Python files..."
-    
+
     # Lista de archivos Python a corregir
     python_files=(
         "main.py"
-        "openai_integration.py" 
+        "openai_integration.py"
         "panacea_integration.py"
         "openai_integration_fixed.py"
         "panacea_example.py"
     )
-    
+
     for file in "${python_files[@]}"; do
         if [[ -f "$file" ]]; then
             echo "  📝 Fixing: $file"
-            
+
             # Usar autopep8 si está disponible
             if command -v autopep8 &> /dev/null; then
                 autopep8 --in-place --max-line-length=100 --aggressive --aggressive "$file"
             fi
-            
+
             # Usar black si está disponible
             if command -v black &> /dev/null; then
                 black --line-length=100 "$file" 2>/dev/null || true
             fi
-            
+
             echo "  ✅ Fixed: $file"
         else
             echo "  ⚠️  File not found: $file"
@@ -48,7 +48,7 @@ fix_python_files() {
 fix_unused_imports() {
     echo ""
     echo "📦 Fixing unused imports..."
-    
+
     # Usar autoflake si está disponible
     if command -v autoflake &> /dev/null; then
         autoflake --in-place --remove-all-unused-imports --remove-unused-variables \
@@ -60,14 +60,14 @@ fix_unused_imports() {
 fix_whitespace() {
     echo ""
     echo "🧹 Fixing whitespace issues..."
-    
+
     # Remover trailing whitespace
     for file in *.py; do
         if [[ -f "$file" ]]; then
             sed -i '' 's/[[:space:]]*$//' "$file"
         fi
     done
-    
+
     echo "  ✅ Whitespace fixed"
 }
 
@@ -75,34 +75,34 @@ fix_whitespace() {
 install_formatting_tools() {
     echo ""
     echo "🔧 Installing formatting tools..."
-    
+
     # Verificar e instalar herramientas
     tools_needed=false
-    
+
     if ! command -v autopep8 &> /dev/null; then
         echo "  📦 Installing autopep8..."
         pip3 install autopep8 || poetry add --group dev autopep8 || true
         tools_needed=true
     fi
-    
+
     if ! command -v black &> /dev/null; then
         echo "  📦 Installing black..."
         pip3 install black || poetry add --group dev black || true
         tools_needed=true
     fi
-    
+
     if ! command -v autoflake &> /dev/null; then
         echo "  📦 Installing autoflake..."
         pip3 install autoflake || poetry add --group dev autoflake || true
         tools_needed=true
     fi
-    
+
     if ! command -v isort &> /dev/null; then
         echo "  📦 Installing isort..."
         pip3 install isort || poetry add --group dev isort || true
         tools_needed=true
     fi
-    
+
     if [ "$tools_needed" = false ]; then
         echo "  ✅ All formatting tools already available"
     fi
@@ -112,7 +112,7 @@ install_formatting_tools() {
 fix_import_order() {
     echo ""
     echo "📚 Fixing import order..."
-    
+
     if command -v isort &> /dev/null; then
         isort --profile black --line-length 100 *.py 2>/dev/null || true
         echo "  ✅ Import order fixed"
@@ -125,14 +125,14 @@ fix_import_order() {
 fix_specific_issues() {
     echo ""
     echo "🎯 Fixing specific issues..."
-    
+
     # Corregir redefinición de datetime en panacea_integration.py
     if [[ -f "panacea_integration.py" ]]; then
         # Remover import duplicado de datetime
         sed -i '' '/^from datetime import datetime$/d' panacea_integration.py
         echo "  ✅ Fixed datetime redefinition in panacea_integration.py"
     fi
-    
+
     # Corregir problemas de indentación
     for file in *.py; do
         if [[ -f "$file" ]]; then
@@ -140,7 +140,7 @@ fix_specific_issues() {
             sed -i '' 's/\t/    /g' "$file"
         fi
     done
-    
+
     echo "  ✅ Specific issues fixed"
 }
 
@@ -148,7 +148,7 @@ fix_specific_issues() {
 validate_fixes() {
     echo ""
     echo "✅ Validating fixes..."
-    
+
     # Verificar sintaxis Python
     for file in *.py; do
         if [[ -f "$file" ]]; then

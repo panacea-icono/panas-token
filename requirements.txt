@@ -6,6 +6,11 @@ algokit-utils==3.0.2
 algosdk==2.7.0
 py-algorand-sdk==2.9.1
 
+# Database Dependencies
+asyncpg==0.30.0
+aioredis==2.0.1
+psycopg2-binary==2.9.12
+
 # AI/ML Integration
 openai==1.93.0
 huggingface-hub==0.33.2

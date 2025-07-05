@@ -64,10 +64,34 @@ echo "🔧 Configurando buildpacks..."
 heroku buildpacks:clear --app $APP_NAME
 heroku buildpacks:add heroku/python --app $APP_NAME
 
-# Configurar add-ons (opcionales)
-echo "🔌 Configurando add-ons..."
-heroku addons:create heroku-redis:mini --app $APP_NAME || echo "Redis addon already exists or not available"
-heroku addons:create heroku-postgresql:mini --app $APP_NAME || echo "PostgreSQL addon already exists or not available"
+# Configurar add-ons (base de datos)
+echo "�️ Configurando base de datos..."
+
+# Configurar PostgreSQL
+echo "🐘 Configurando PostgreSQL..."
+if heroku addons:create heroku-postgresql:essential-0 --app $APP_NAME 2>/dev/null; then
+    echo "✅ PostgreSQL essential-0 instalado"
+elif heroku addons:create heroku-postgresql:mini --app $APP_NAME 2>/dev/null; then
+    echo "✅ PostgreSQL mini instalado"
+elif heroku addons:create heroku-postgresql:hobby-dev --app $APP_NAME 2>/dev/null; then
+    echo "✅ PostgreSQL hobby-dev instalado"
+else
+    echo "⚠️ PostgreSQL addon ya existe o no disponible"
+fi
+
+# Configurar Redis
+echo "🔴 Configurando Redis..."
+if heroku addons:create heroku-redis:mini --app $APP_NAME 2>/dev/null; then
+    echo "✅ Redis mini instalado"
+elif heroku addons:create heroku-redis:hobby-dev --app $APP_NAME 2>/dev/null; then
+    echo "✅ Redis hobby-dev instalado"
+else
+    echo "⚠️ Redis addon ya existe o no disponible"
+fi
+
+# Esperar que PostgreSQL esté listo
+echo "⏳ Esperando que la base de datos esté lista..."
+heroku pg:wait --app $APP_NAME 2>/dev/null || echo "PostgreSQL ready or not configured"
 
 # Configurar git remote si no existe
 if ! git remote get-url heroku &> /dev/null; then
