@@ -1,3 +1,12 @@
+<!-- PANACEA_ECOSYSTEM_HEADER -->
+# PANAS-TOKEN
+
+> Parte del ecosistema Panacea | Icono SA. Hub: [Ton-telegram](https://github.com/panacea-icono/Ton-telegram)
+
+- Organización: [@panacea-icono](https://github.com/panacea-icono)
+- Documentación de repos: [/docs/REPOSITORIES.md](https://github.com/panacea-icono/Ton-telegram/tree/main/docs/REPOSITORIES.md)
+- Estructura y submódulos: [/docs/REPOS-STRUCTURE.md](https://github.com/panacea-icono/Ton-telegram/tree/main/docs/REPOS-STRUCTURE.md)
+
 # panas_token
 
 This starter full stack project has been generated using AlgoKit. See below for default getting started instructions.
